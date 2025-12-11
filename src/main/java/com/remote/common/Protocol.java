@@ -1,0 +1,9 @@
+package com.remote.common;
+
+public class Protocol {
+    public static final int PORT = 9999;
+    
+    public static final int CMD_MOUSE_MOVE = 1;    
+    public static final int CMD_MOUSE_PRESS = 2;   
+    public static final int CMD_MOUSE_RELEASE = 3; 
+}
