@@ -28,10 +28,14 @@ public class ServerApp {
                 Socket socket = serverSocket.accept();
                 new Thread(() -> {
                     try (DataOutputStream dos = new DataOutputStream(socket.getOutputStream())) {
+                        dos.writeInt(Protocol.CMD_SCREEN_SIZE);
+                        dos.writeInt(rect.width);
+                        dos.writeInt(rect.height);
+                        dos.flush();
                         while (!socket.isClosed()) {
                             // 1. Chụp toàn bộ màn hình
                             BufferedImage currentScreen = robot.createScreenCapture(rect);
-                            
+
                             // 2. Duyệt qua từng ô (Grid)
                             int cols = (int) Math.ceil((double) currentScreen.getWidth() / TILE_SIZE);
                             int rows = (int) Math.ceil((double) currentScreen.getHeight() / TILE_SIZE);
@@ -60,27 +64,28 @@ public class ServerApp {
                                     // 3. Nếu thay đổi -> Gửi ô đó đi
                                     if (changed) {
                                         byte[] data = ImageUtils.compress(currentTile, 0.7f);
-                                        
+
                                         synchronized (dos) {
                                             dos.writeInt(Protocol.CMD_SEND_TILE);
                                             dos.writeInt(tileX); // Tọa độ X
                                             dos.writeInt(tileY); // Tọa độ Y
-                                            dos.writeInt(w);     // Chiều rộng ô
-                                            dos.writeInt(h);     // Chiều cao ô
+                                            dos.writeInt(w); // Chiều rộng ô
+                                            dos.writeInt(h); // Chiều cao ô
                                             dos.writeInt(data.length); // Kích thước ảnh
-                                            dos.write(data);     // Dữ liệu ảnh
+                                            dos.write(data); // Dữ liệu ảnh
                                         }
                                     }
                                 }
                             }
-                            
+
                             dos.flush();
-                            // Lưu lại frame hiện tại làm "quá khứ" cho vòng lặp sau
                             prevScreen[0] = currentScreen;
 
                             Thread.sleep(30); // ~30 FPS
                         }
-                    } catch (Exception e) { e.printStackTrace(); }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }).start();
 
                 new Thread(() -> {

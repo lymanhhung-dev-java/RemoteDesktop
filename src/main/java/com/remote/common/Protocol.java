@@ -12,5 +12,8 @@ public class Protocol {
 
     public static final int CMD_MOUSE_WHEEL = 6;
 
+    public static final int CMD_SCREEN_SIZE = 7;
+
+
     public static final int CMD_SEND_TILE = 10;
 }

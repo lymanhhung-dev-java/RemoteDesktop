@@ -50,6 +50,13 @@ public class ClientApp extends JFrame {
 
                 while (true) {
                     int cmd = dis.readInt();
+                    if (cmd == Protocol.CMD_SCREEN_SIZE) {
+                        int w = dis.readInt();
+                        int h = dis.readInt();
+                        serverWidth = w;
+                        serverHeight = h;
+                        screenPanel.updateBufferSize(w, h);
+                    }
 
                     if (cmd == Protocol.CMD_SEND_TILE) {
                         int x = dis.readInt();
@@ -171,6 +178,10 @@ public class ClientApp extends JFrame {
             g2d.dispose();
 
             this.repaint();
+        }
+
+        public void updateBufferSize(int w, int h) {
+            buffer = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
         }
 
         @Override
