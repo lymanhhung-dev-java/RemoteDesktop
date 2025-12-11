@@ -6,4 +6,7 @@ public class Protocol {
     public static final int CMD_MOUSE_MOVE = 1;    
     public static final int CMD_MOUSE_PRESS = 2;   
     public static final int CMD_MOUSE_RELEASE = 3; 
+
+    public static final int CMD_KEY_PRESS = 4; 
+    public static final int CMD_KEY_RELEASE = 5;
 }

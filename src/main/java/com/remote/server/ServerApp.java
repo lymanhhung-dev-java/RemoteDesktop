@@ -10,14 +10,15 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class ServerApp {
+
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(Protocol.PORT)) {
             System.out.println("SERVER dang chay...");
             System.out.println("Dang cho ket noi tai Port: " + Protocol.PORT);
 
             Robot robot = new Robot();
-            //Rectangle rect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
-            Rectangle rect = new Rectangle(0, 0, 800, 600);
+            Rectangle rect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+            // Rectangle rect = new Rectangle(0, 0, 800, 600);
 
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -43,17 +44,28 @@ public class ServerApp {
                     try (DataInputStream dis = new DataInputStream(socket.getInputStream())) {
                         while (!socket.isClosed()) {
                             int type = dis.readInt();
-                            
+
                             if (type == Protocol.CMD_MOUSE_MOVE) {
                                 int x = dis.readInt();
                                 int y = dis.readInt();
                                 robot.mouseMove(x, y);
-                            } 
-                            else if (type == Protocol.CMD_MOUSE_PRESS) {
+                            } else if (type == Protocol.CMD_MOUSE_PRESS) {
                                 robot.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
-                            } 
-                            else if (type == Protocol.CMD_MOUSE_RELEASE) {
+                            } else if (type == Protocol.CMD_MOUSE_RELEASE) {
                                 robot.mouseRelease(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
+                            } else if (type == Protocol.CMD_KEY_PRESS) {
+                                int keyCode = dis.readInt(); // Đọc mã phím
+                                try {
+                                    robot.keyPress(keyCode); // Robot nhấn phím
+                                } catch (IllegalArgumentException ex) {
+                                    // Bỏ qua một số phím lạ mà Robot không hỗ trợ
+                                }
+                            } else if (type == Protocol.CMD_KEY_RELEASE) {
+                                int keyCode = dis.readInt(); // Đọc mã phím
+                                try {
+                                    robot.keyRelease(keyCode); // Robot thả phím
+                                } catch (IllegalArgumentException ex) {
+                                }
                             }
                         }
                     } catch (Exception e) {
