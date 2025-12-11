@@ -81,7 +81,7 @@ public class ServerApp {
                             dos.flush();
                             prevScreen[0] = currentScreen;
 
-                            Thread.sleep(30); // ~30 FPS
+                            Thread.sleep(10); // ~30 FPS
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -136,7 +136,7 @@ public class ServerApp {
     private static boolean isTileChanged(BufferedImage img1, BufferedImage img2) {
         int w = img1.getWidth();
         int h = img1.getHeight();
-        int step = 10;
+        int step = 1;
 
         for (int y = 0; y < h; y += step) {
             for (int x = 0; x < w; x += step) {

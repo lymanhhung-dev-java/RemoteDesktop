@@ -70,7 +70,6 @@ public class ClientApp extends JFrame {
 
                         BufferedImage tile = ImageUtils.decompress(data);
 
-                        // Vẽ ô mới nhận được lên panel
                         SwingUtilities.invokeLater(() -> {
                             screenPanel.drawTile(tile, x, y, w, h);
                         });
