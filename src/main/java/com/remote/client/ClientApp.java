@@ -68,10 +68,11 @@ public class ClientApp extends JFrame {
                         byte[] data = new byte[len];
                         dis.readFully(data);
 
-                        BufferedImage tile = ImageUtils.decompress(data);
+                        // Giải nén Zlib ra mảng pixel raw
+                        int[] tilePixels = ImageUtils.decompressRaw(data, w, h);
 
                         SwingUtilities.invokeLater(() -> {
-                            screenPanel.drawTile(tile, x, y, w, h);
+                            screenPanel.drawTileRaw(tilePixels, x, y, w, h);
                         });
                     }
                 }
@@ -168,19 +169,16 @@ public class ClientApp extends JFrame {
     class ScreenPanel extends JPanel {
         private BufferedImage buffer;
 
-        public void drawTile(BufferedImage tile, int x, int y, int w, int h) {
-            if (buffer == null || buffer.getWidth() < x + w || buffer.getHeight() < y + h) {
-                buffer = new BufferedImage(1920, 1080, BufferedImage.TYPE_INT_RGB);
-            }
-            Graphics2D g2d = buffer.createGraphics();
-            g2d.drawImage(tile, x, y, w, h, null);
-            g2d.dispose();
-
-            this.repaint();
+        public void updateBufferSize(int w, int h) {
+            buffer = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         }
 
-        public void updateBufferSize(int w, int h) {
-            buffer = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        public void drawTileRaw(int[] pixels, int x, int y, int w, int h) {
+            if (buffer == null) return;
+
+            buffer.setRGB(x, y, w, h, pixels, 0, w);
+            
+            this.repaint(0, 0, this.getWidth(), this.getHeight()); 
         }
 
         @Override
