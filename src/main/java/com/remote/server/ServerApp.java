@@ -54,17 +54,23 @@ public class ServerApp {
                             } else if (type == Protocol.CMD_MOUSE_RELEASE) {
                                 robot.mouseRelease(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
                             } else if (type == Protocol.CMD_KEY_PRESS) {
-                                int keyCode = dis.readInt(); // Đọc mã phím
+                                int keyCode = dis.readInt();
                                 try {
-                                    robot.keyPress(keyCode); // Robot nhấn phím
+                                    robot.keyPress(keyCode);
                                 } catch (IllegalArgumentException ex) {
-                                    // Bỏ qua một số phím lạ mà Robot không hỗ trợ
+
                                 }
                             } else if (type == Protocol.CMD_KEY_RELEASE) {
-                                int keyCode = dis.readInt(); // Đọc mã phím
+                                int keyCode = dis.readInt();
                                 try {
-                                    robot.keyRelease(keyCode); // Robot thả phím
+                                    robot.keyRelease(keyCode);
                                 } catch (IllegalArgumentException ex) {
+                                }
+                            } else if (type == Protocol.CMD_MOUSE_WHEEL) {
+                                int wheelAmt = dis.readInt(); 
+                                try {
+                                    robot.mouseWheel(wheelAmt); 
+                                } catch (Exception ex) {
                                 }
                             }
                         }
