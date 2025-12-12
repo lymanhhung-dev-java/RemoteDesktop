@@ -11,54 +11,89 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
 
-public class ClientApp extends JFrame {
-    private ScreenPanel screenPanel;
-    private DataOutputStream dos;
+public class ClientApp {
 
-    private float serverWidth = 0;
-    private float serverHeight = 0;
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            // Hỏi IP
+            String ip = JOptionPane.showInputDialog("Nhập IP Server:", "192.168.1.X");
+            if (ip == null || ip.isEmpty()) System.exit(0);
 
-    public ClientApp() {
-        setTitle("Remote Desktop Viewer (Auto Scale)");
-        setSize(1024, 768);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+            // Hỏi Mật khẩu
+            String pass = JOptionPane.showInputDialog("Nhập Mật khẩu truy cập:");
+            if (pass == null || pass.isEmpty()) System.exit(0);
 
-        screenPanel = new ScreenPanel();
-        add(screenPanel, BorderLayout.CENTER);
-
-        setupMouseEvents();
-        setupKeyboardEvents();
-
-        this.setFocusable(true);
-        this.requestFocusInWindow();
-
-        setVisible(true);
-
-        String ip = JOptionPane.showInputDialog("Nhập IP Server:", "192.168.1.4");
-        if (ip != null && !ip.isEmpty())
-            connectToServer(ip);
-        else
-            System.exit(0);
+            // Bắt đầu kết nối
+            new ClientApp().startConnection(ip, pass);
+        });
     }
 
-    private void connectToServer(String ip) {
+    public void startConnection(String ip, String password) {
         new Thread(() -> {
             try {
+
                 Socket socket = new Socket(ip, Protocol.PORT);
-                dos = new DataOutputStream(socket.getOutputStream());
+                DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
                 DataInputStream dis = new DataInputStream(socket.getInputStream());
 
-                while (true) {
+                dos.writeInt(Protocol.CMD_AUTH_REQUEST);
+                dos.writeUTF(password);
+                dos.flush();
+
+
+                int authResponse = dis.readInt();
+                
+                if (authResponse == Protocol.CMD_AUTH_OK) {
+
+                    System.out.println("Dang nhap thanh cong!");
+                    SwingUtilities.invokeLater(() -> showViewerWindow(socket, dos, dis, ip));
+                } else {
+
+                    JOptionPane.showMessageDialog(null, "Sai mật khẩu! Kết nối bị từ chối.", "Lỗi Xác Thực", JOptionPane.ERROR_MESSAGE);
+                    socket.close();
+                }
+
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Không thể kết nối tới " + ip + "\nLỗi: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+
+    private void showViewerWindow(Socket socket, DataOutputStream dos, DataInputStream dis, String ip) {
+        JFrame frame = new JFrame("Remote Desktop - Connected to: " + ip);
+        frame.setSize(1024, 768);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
+
+
+        ScreenPanel screenPanel = new ScreenPanel();
+        frame.add(screenPanel, BorderLayout.CENTER);
+
+
+        setupMouseEvents(screenPanel, dos);
+        setupKeyboardEvents(frame, dos);
+
+
+        frame.setFocusable(true);
+        frame.requestFocusInWindow();
+        frame.setVisible(true);
+
+  
+        new Thread(() -> {
+            try {
+                while (!socket.isClosed()) {
                     int cmd = dis.readInt();
+                    
                     if (cmd == Protocol.CMD_SCREEN_SIZE) {
                         int w = dis.readInt();
                         int h = dis.readInt();
-                        serverWidth = w;
-                        serverHeight = h;
-                        screenPanel.updateBufferSize(w, h);
-                    }
 
-                    if (cmd == Protocol.CMD_SEND_TILE) {
+                        screenPanel.setServerSize(w, h);
+                        screenPanel.updateBufferSize(w, h);
+                    } 
+                    else if (cmd == Protocol.CMD_SEND_TILE) {
+
                         int x = dis.readInt();
                         int y = dis.readInt();
                         int w = dis.readInt();
@@ -68,8 +103,9 @@ public class ClientApp extends JFrame {
                         byte[] data = new byte[len];
                         dis.readFully(data);
 
-                        // Giải nén Zlib ra mảng pixel raw
+
                         int[] tilePixels = ImageUtils.decompressRaw(data, w, h);
+
 
                         SwingUtilities.invokeLater(() -> {
                             screenPanel.drawTileRaw(tilePixels, x, y, w, h);
@@ -77,36 +113,30 @@ public class ClientApp extends JFrame {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                // Server ngắt kết nối hoặc lỗi mạng
+                if (frame.isVisible()) {
+                    JOptionPane.showMessageDialog(frame, "Mất kết nối với Server!");
+                    frame.dispose();
+                }
             }
         }).start();
     }
 
-    private void setupMouseEvents() {
+
+
+    private void setupMouseEvents(ScreenPanel screenPanel, DataOutputStream dos) {
         MouseAdapter mouseHandler = new MouseAdapter() {
             @Override
-            public void mouseMoved(MouseEvent e) {
-                sendMouse(Protocol.CMD_MOUSE_MOVE, e);
-            }
-
+            public void mouseMoved(MouseEvent e) { sendMouse(Protocol.CMD_MOUSE_MOVE, e, screenPanel, dos); }
             @Override
-            public void mouseDragged(MouseEvent e) {
-                sendMouse(Protocol.CMD_MOUSE_MOVE, e);
-            }
-
+            public void mouseDragged(MouseEvent e) { sendMouse(Protocol.CMD_MOUSE_MOVE, e, screenPanel, dos); }
             @Override
-            public void mousePressed(MouseEvent e) {
-                sendMouse(Protocol.CMD_MOUSE_PRESS, e);
-            }
-
+            public void mousePressed(MouseEvent e) { sendMouse(Protocol.CMD_MOUSE_PRESS, e, screenPanel, dos); }
             @Override
-            public void mouseReleased(MouseEvent e) {
-                sendMouse(Protocol.CMD_MOUSE_RELEASE, e);
-            }
-
+            public void mouseReleased(MouseEvent e) { sendMouse(Protocol.CMD_MOUSE_RELEASE, e, screenPanel, dos); }
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
-                sendCommand(Protocol.CMD_MOUSE_WHEEL, e.getWheelRotation(), 0);
+                sendCommand(Protocol.CMD_MOUSE_WHEEL, e.getWheelRotation(), 0, dos);
             }
         };
 
@@ -115,23 +145,24 @@ public class ClientApp extends JFrame {
         screenPanel.addMouseWheelListener(mouseHandler);
     }
 
-    private void sendMouse(int type, MouseEvent e) {
+    private void sendMouse(int type, MouseEvent e, ScreenPanel screenPanel, DataOutputStream dos) {
 
-        if (serverWidth == 0 || serverHeight == 0)
-            return;
+        if (screenPanel.serverWidth == 0 || screenPanel.serverHeight == 0) return;
+
         float clientW = screenPanel.getWidth();
         float clientH = screenPanel.getHeight();
 
-        float scaleX = serverWidth / clientW;
-        float scaleY = serverHeight / clientH;
+        // Tính tỉ lệ co giãn
+        float scaleX = screenPanel.serverWidth / clientW;
+        float scaleY = screenPanel.serverHeight / clientH;
 
         int realX = (int) (e.getX() * scaleX);
         int realY = (int) (e.getY() * scaleY);
 
-        sendCommand(type, realX, realY);
+        sendCommand(type, realX, realY, dos);
     }
 
-    private void sendCommand(int type, int p1, int p2) {
+    private void sendCommand(int type, int p1, int p2, DataOutputStream dos) {
         try {
             if (dos != null) {
                 dos.writeInt(type);
@@ -145,46 +176,56 @@ public class ClientApp extends JFrame {
                 dos.flush();
             }
         } catch (Exception ex) {
+
         }
     }
 
-    private void setupKeyboardEvents() {
-        this.addKeyListener(new KeyAdapter() {
+    private void setupKeyboardEvents(JFrame frame, DataOutputStream dos) {
+        frame.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                sendCommand(Protocol.CMD_KEY_PRESS, e.getKeyCode(), 0);
+                sendCommand(Protocol.CMD_KEY_PRESS, e.getKeyCode(), 0, dos);
             }
-
             @Override
             public void keyReleased(KeyEvent e) {
-                sendCommand(Protocol.CMD_KEY_RELEASE, e.getKeyCode(), 0);
+                sendCommand(Protocol.CMD_KEY_RELEASE, e.getKeyCode(), 0, dos);
             }
         });
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(ClientApp::new);
-    }
 
-    class ScreenPanel extends JPanel {
+    static class ScreenPanel extends JPanel {
         private BufferedImage buffer;
+        public float serverWidth = 0;
+        public float serverHeight = 0;
+
+        public void setServerSize(int w, int h) {
+            this.serverWidth = w;
+            this.serverHeight = h;
+        }
 
         public void updateBufferSize(int w, int h) {
-            buffer = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+            // Tạo buffer mới nếu kích thước thay đổi
+            if (buffer == null || buffer.getWidth() != w || buffer.getHeight() != h) {
+                buffer = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+            }
         }
 
         public void drawTileRaw(int[] pixels, int x, int y, int w, int h) {
             if (buffer == null) return;
-
+            
+            // Set pixel trực tiếp vào buffer (Hiệu năng cao)
             buffer.setRGB(x, y, w, h, pixels, 0, w);
             
-            this.repaint(0, 0, this.getWidth(), this.getHeight()); 
+            // Vẽ lại toàn bộ panel (để Swing tự co giãn ảnh theo kích thước cửa sổ)
+            this.repaint();
         }
 
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (buffer != null) {
+                // Vẽ buffer co giãn đầy panel
                 g.drawImage(buffer, 0, 0, this.getWidth(), this.getHeight(), null);
             }
         }
