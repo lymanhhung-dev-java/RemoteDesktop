@@ -174,6 +174,9 @@ public class ServerApp {
                             }
                         }
                     }
+                    synchronized (dos) {
+                        dos.writeInt(Protocol.CMD_FRAME_END);
+                    }
 
                     dos.flush();
 

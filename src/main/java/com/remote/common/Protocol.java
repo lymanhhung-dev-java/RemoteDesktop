@@ -24,4 +24,6 @@ public class Protocol {
     public static final int CMD_AUTH_REQUEST = 20; // Client gửi mật khẩu lên
     public static final int CMD_AUTH_OK = 21;      // Server đồng ý
     public static final int CMD_AUTH_FAIL = 22;    // Server từ chối
+
+    public static final int CMD_FRAME_END = 11;
 }
