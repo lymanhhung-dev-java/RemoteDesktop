@@ -115,28 +115,62 @@ public class MainApp {
     }
 
     // quét UDP
+    // Quét UDP (Đã sửa lỗi)
     private static void scanDevices(DefaultTableModel model) {
-        model.setRowCount(0);
+        model.setRowCount(0); 
         new Thread(() -> {
             try {
                 Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
                 while (interfaces.hasMoreElements()) {
                     NetworkInterface networkInterface = interfaces.nextElement();
+                  
                     if (networkInterface.isLoopback() || !networkInterface.isUp())
                         continue;
 
                     for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
                         InetAddress broadcast = interfaceAddress.getBroadcast();
+                        
                         if (broadcast != null) {
-                            try (DatagramSocket socket = new DatagramSocket()) {
+                            try {
+                                DatagramSocket socket = new DatagramSocket();
                                 socket.setBroadcast(true);
-                                byte[] sendData = Protocol.DISCOVERY_REQ.getBytes();
+                                socket.setSoTimeout(1000); 
 
-                                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcast,
-                                        Protocol.UDP_PORT);
+                                byte[] sendData = Protocol.DISCOVERY_REQ.getBytes();
+                                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcast, Protocol.UDP_PORT);
                                 socket.send(sendPacket);
-                                System.out.println("Đã gửi tín hiệu tìm kiếm qua: " + networkInterface.getDisplayName()
-                                        + " -> " + broadcast);
+                                System.out.println("Đã gửi tín hiệu qua: " + networkInterface.getDisplayName());
+
+                                long startWait = System.currentTimeMillis();
+                                while (System.currentTimeMillis() - startWait < 1000) {
+                                    try {
+                                        byte[] buf = new byte[1024];
+                                        DatagramPacket recvPacket = new DatagramPacket(buf, buf.length);
+                                        
+                                        socket.receive(recvPacket); 
+
+                                        String msg = new String(recvPacket.getData(), 0, recvPacket.getLength()).trim();
+                                        if (msg.startsWith(Protocol.DISCOVERY_RES)) {
+                                            String[] parts = msg.split(";");
+                                            String name = parts.length > 1 ? parts[1] : "Unknown";
+                                            String ip = recvPacket.getAddress().getHostAddress();
+
+                                            SwingUtilities.invokeLater(() -> {
+                                                boolean exists = false;
+                                                for(int i=0; i<model.getRowCount(); i++) {
+                                                    if(model.getValueAt(i, 1).equals(ip)) { exists = true; break; }
+                                                }
+                                                if(!exists && !ip.equals(getLocalIp())) { 
+                                                    model.addRow(new Object[]{name, ip});
+                                                }
+                                            });
+                                        }
+                                    } catch (SocketTimeoutException e) {
+                                        break;
+                                    }
+                                }
+                                
+                                socket.close(); 
                             } catch (Exception e) {
                             }
                         }
