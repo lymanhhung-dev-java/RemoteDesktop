@@ -80,25 +80,20 @@ public class MainApp {
 
         frame.add(myInfoPanel);
         frame.add(remotePanel);
-
-        // Nút Scan: Quét UDP
         btnScan.addActionListener(e -> scanDevices(model));
 
-        // Nút Connect:
         btnConnect.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row >= 0) {
                 String ip = (String) model.getValueAt(row, 1);
                 connectToDevice(ip);
             } else {
-                // Nếu chưa chọn, cho nhập tay
                 String ip = JOptionPane.showInputDialog("Nhập IP máy đối tác:");
                 if (ip != null && !ip.isEmpty())
                     connectToDevice(ip);
             }
         });
 
-        // Quét lần đầu
         scanDevices(model);
 
         frame.setVisible(true);
@@ -116,27 +111,28 @@ public class MainApp {
 
     // quét UDP
     private static void scanDevices(DefaultTableModel model) {
-        model.setRowCount(0); 
+        model.setRowCount(0);
         new Thread(() -> {
             try {
                 Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
                 while (interfaces.hasMoreElements()) {
                     NetworkInterface networkInterface = interfaces.nextElement();
-                  
+
                     if (networkInterface.isLoopback() || !networkInterface.isUp())
                         continue;
 
                     for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
                         InetAddress broadcast = interfaceAddress.getBroadcast();
-                        
+
                         if (broadcast != null) {
                             try {
                                 DatagramSocket socket = new DatagramSocket();
                                 socket.setBroadcast(true);
-                                socket.setSoTimeout(1000); 
+                                socket.setSoTimeout(1000);
 
                                 byte[] sendData = Protocol.DISCOVERY_REQ.getBytes();
-                                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcast, Protocol.UDP_PORT);
+                                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcast,
+                                        Protocol.UDP_PORT);
                                 socket.send(sendPacket);
                                 System.out.println("Đã gửi tín hiệu qua: " + networkInterface.getDisplayName());
 
@@ -145,8 +141,8 @@ public class MainApp {
                                     try {
                                         byte[] buf = new byte[1024];
                                         DatagramPacket recvPacket = new DatagramPacket(buf, buf.length);
-                                        
-                                        socket.receive(recvPacket); 
+
+                                        socket.receive(recvPacket);
 
                                         String msg = new String(recvPacket.getData(), 0, recvPacket.getLength()).trim();
                                         if (msg.startsWith(Protocol.DISCOVERY_RES)) {
@@ -156,11 +152,14 @@ public class MainApp {
 
                                             SwingUtilities.invokeLater(() -> {
                                                 boolean exists = false;
-                                                for(int i=0; i<model.getRowCount(); i++) {
-                                                    if(model.getValueAt(i, 1).equals(ip)) { exists = true; break; }
+                                                for (int i = 0; i < model.getRowCount(); i++) {
+                                                    if (model.getValueAt(i, 1).equals(ip)) {
+                                                        exists = true;
+                                                        break;
+                                                    }
                                                 }
-                                                if(!exists && !ip.equals(getLocalIp())) { 
-                                                    model.addRow(new Object[]{name, ip});
+                                                if (!exists && !isMyIpAddress(ip)) {
+                                                    model.addRow(new Object[] { name, ip });
                                                 }
                                             });
                                         }
@@ -168,8 +167,8 @@ public class MainApp {
                                         break;
                                     }
                                 }
-                                
-                                socket.close(); 
+
+                                socket.close();
                             } catch (Exception e) {
                             }
                         }
@@ -183,6 +182,25 @@ public class MainApp {
 
     private static String getLocalIp() {
         try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface iface = interfaces.nextElement();
+
+                if (iface.isLoopback() || !iface.isUp() || iface.isVirtual()
+                        || iface.getDisplayName().contains("Virtual")
+                        || iface.getDisplayName().contains("VMware")) {
+                    continue;
+                }
+
+                Enumeration<InetAddress> addresses = iface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress addr = addresses.nextElement();
+
+                    if (addr instanceof Inet4Address && addr.isSiteLocalAddress()) {
+                        return addr.getHostAddress();
+                    }
+                }
+            }
             return InetAddress.getLocalHost().getHostAddress();
         } catch (Exception e) {
             return "Unknown";
@@ -196,5 +214,23 @@ public class MainApp {
             p.add(c);
         }
         p.add(Box.createVerticalGlue());
+    }
+
+    private static boolean isMyIpAddress(String ipToCheck) {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface iface = interfaces.nextElement();
+                Enumeration<InetAddress> addresses = iface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress addr = addresses.nextElement();
+                    if (addr.getHostAddress().equals(ipToCheck)) {
+                        return true; 
+                    }
+                }
+            }
+        } catch (Exception e) {
+        }
+        return false;
     }
 }
