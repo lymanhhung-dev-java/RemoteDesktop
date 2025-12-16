@@ -115,7 +115,6 @@ public class MainApp {
     }
 
     // quét UDP
-    // Quét UDP (Đã sửa lỗi)
     private static void scanDevices(DefaultTableModel model) {
         model.setRowCount(0); 
         new Thread(() -> {
