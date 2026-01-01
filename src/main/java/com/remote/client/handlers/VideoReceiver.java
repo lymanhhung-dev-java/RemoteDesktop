@@ -35,25 +35,30 @@ public class VideoReceiver extends Thread {
 
             Java2DFrameConverter converter = new Java2DFrameConverter();
 
-            while (!socket.isClosed()) {
+           while (!socket.isClosed()) {
                 Frame frame = grabber.grabImage();
                 if (frame != null) {
-                    // --- BƯỚC 3: CẬP NHẬT KÍCH THƯỚC TỰ ĐỘNG ---
-                    // Nếu kích thước video thay đổi hoặc mới kết nối -> Cập nhật lại Panel
+                    // --- ĐOẠN CODE SỬA ĐỔI ---
+                    
+                    // 1. Chỉ xử lý nếu frame có kích thước hợp lệ
                     if (frame.imageWidth > 0 && frame.imageHeight > 0) {
+                        
+                        // Cập nhật kích thước Panel nếu thay đổi
                         if (screenPanel.serverWidth != frame.imageWidth || screenPanel.serverHeight != frame.imageHeight) {
                             screenPanel.setServerSize(frame.imageWidth, frame.imageHeight);
                             screenPanel.updateBufferSize(frame.imageWidth, frame.imageHeight);
                         }
-                    }
 
-                    BufferedImage img = converter.convert(frame);
-                    if (img != null) {
-                        SwingUtilities.invokeLater(() -> {
-                            screenPanel.drawFullImage(img);
-                            screenPanel.repaint();
-                        });
-                    }
+                        // 2. Convert và Vẽ
+                        BufferedImage img = converter.convert(frame);
+                        if (img != null) {
+                            SwingUtilities.invokeLater(() -> {
+                                screenPanel.drawFullImage(img);
+                                screenPanel.repaint();
+                            });
+                        }
+                    } 
+                    // Nếu size = 0 thì bỏ qua, không làm gì cả (tránh lỗi Picture size 0x0 invalid)
                 }
             }
         } catch (Exception e) {
