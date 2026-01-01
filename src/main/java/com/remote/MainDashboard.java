@@ -75,43 +75,81 @@ public class MainDashboard {
     private static void scanLan(DefaultTableModel model) {
         model.setRowCount(0);
         new Thread(() -> {
-            try (DatagramSocket socket = new DatagramSocket()) {
-                socket.setBroadcast(true);
-                socket.setSoTimeout(1000); 
-                
-                byte[] data = Protocol.DISCOVERY_REQ.getBytes();
-                socket.send(new DatagramPacket(data, data.length, InetAddress.getByName("255.255.255.255"), Config.UDP_PORT));
+            try {
+                // Duyệt qua TẤT CẢ các card mạng đang có trên máy tính
+                Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+                while (interfaces.hasMoreElements()) {
+                    NetworkInterface networkInterface = interfaces.nextElement();
 
-                long start = System.currentTimeMillis();
-                while (System.currentTimeMillis() - start < 1500) {
-                    try {
-                        byte[] buf = new byte[1024];
-                        DatagramPacket pkt = new DatagramPacket(buf, buf.length);
-                        socket.receive(pkt);
+                    // Bỏ qua card mạng ảo loopback hoặc card đang tắt
+                    if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                        continue;
+                    }
+
+                    // Lấy địa chỉ Broadcast của từng card và gửi gói tin
+                    for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                        InetAddress broadcast = interfaceAddress.getBroadcast();
                         
-                        String msg = new String(pkt.getData(), 0, pkt.getLength()).trim();
-                        if (msg.startsWith(Protocol.DISCOVERY_RES)) {
-                            String ip = pkt.getAddress().getHostAddress();
-                        
-                            if (!isLocalAddress(ip)) { 
-                                String name = msg.split(";")[1];
-                                
-                                boolean exists = false;
-                                for (int i = 0; i < model.getRowCount(); i++) {
-                                    if (model.getValueAt(i, 1).equals(ip)) {
-                                        exists = true;
-                                        break;
+                        // Nếu card mạng này có địa chỉ broadcast (tức là nó nối mạng LAN)
+                        if (broadcast != null) {
+                            try {
+                                DatagramSocket socket = new DatagramSocket();
+                                socket.setBroadcast(true);
+                                socket.setSoTimeout(1000); // Chờ 1 giây
+
+                                byte[] data = Protocol.DISCOVERY_REQ.getBytes();
+                                DatagramPacket sendPacket = new DatagramPacket(data, data.length, broadcast, Config.UDP_PORT);
+                                socket.send(sendPacket);
+                                System.out.println("Đã gửi tín hiệu qua card: " + networkInterface.getDisplayName());
+
+                                // Chờ phản hồi trên cổng này
+                                long startWait = System.currentTimeMillis();
+                                while (System.currentTimeMillis() - startWait < 1000) {
+                                    try {
+                                        byte[] buf = new byte[1024];
+                                        DatagramPacket recvPacket = new DatagramPacket(buf, buf.length);
+                                        socket.receive(recvPacket);
+
+                                        String msg = new String(recvPacket.getData(), 0, recvPacket.getLength()).trim();
+                                        // DEBUG: In ra xem nhận được gì không
+                                        System.out.println("Nhận từ: " + recvPacket.getAddress().getHostAddress());
+
+                                        if (msg.startsWith(Protocol.DISCOVERY_RES)) {
+                                            String ip = recvPacket.getAddress().getHostAddress();
+                                            
+                                            // Lọc bỏ IP của chính mình (quan trọng)
+                                            if (!isLocalAddress(ip)) {
+                                                String name = msg.split(";")[1];
+                                                
+                                                // Check trùng lặp trước khi thêm vào bảng
+                                                SwingUtilities.invokeLater(() -> {
+                                                    boolean exists = false;
+                                                    for (int i = 0; i < model.getRowCount(); i++) {
+                                                        if (model.getValueAt(i, 1).equals(ip)) {
+                                                            exists = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (!exists) {
+                                                        model.addRow(new Object[]{name, ip});
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    } catch (SocketTimeoutException e) {
+                                        break; // Hết giờ chờ
                                     }
                                 }
-                                
-                                if (!exists) {
-                                    SwingUtilities.invokeLater(() -> model.addRow(new Object[]{name, ip}));
-                                }
+                                socket.close();
+                            } catch (Exception e) {
+                                // Bỏ qua lỗi ở các card mạng không gửi được
                             }
                         }
-                    } catch (SocketTimeoutException ex) { break; }
+                    }
                 }
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }).start();
     }
 
