@@ -1,7 +1,6 @@
 package com.remote.client.handlers;
 
 import com.remote.client.components.ScreenPanel;
-import com.remote.common.Protocol;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
@@ -26,36 +25,30 @@ public class VideoReceiver extends Thread {
     public void run() {
         FFmpegFrameGrabber grabber = null;
         try {
-            // Đọc header kích thước trước (để setup panel)
-            int cmd = dis.readInt();
-            if (cmd == Protocol.CMD_SCREEN_SIZE) {
-                int w = dis.readInt();
-                int h = dis.readInt();
-                screenPanel.setServerSize(w, h);
-                screenPanel.updateBufferSize(w, h);
-            }
-
-            // Cấu hình Grabber: Đọc từ Input Stream của Socket
             grabber = new FFmpegFrameGrabber(socket.getInputStream());
             grabber.setFormat("h264");
-            // Quan trọng: Tăng buffer size để tránh lỗi vỡ hình khi mạng lag
-            grabber.setOption("probesize", "1024000"); 
+            grabber.setOption("probesize", "5000000"); // Tăng lên 5MB để chắc chắn dò được header
+            grabber.setOption("analyzeduration", "5000000"); // Thời gian dò luồng
             grabber.setVideoOption("preset", "ultrafast");
             
-            grabber.start();
+            grabber.start(); // Bắt đầu nhận luồng ngay lập tức
 
             Java2DFrameConverter converter = new Java2DFrameConverter();
 
             while (!socket.isClosed()) {
-                // 1. Lấy khung hình mới (Decode H.264 -> Raw Image)
                 Frame frame = grabber.grabImage();
-                
                 if (frame != null) {
-                    // 2. Convert thành BufferedImage
+                    // --- BƯỚC 3: CẬP NHẬT KÍCH THƯỚC TỰ ĐỘNG ---
+                    // Nếu kích thước video thay đổi hoặc mới kết nối -> Cập nhật lại Panel
+                    if (frame.imageWidth > 0 && frame.imageHeight > 0) {
+                        if (screenPanel.serverWidth != frame.imageWidth || screenPanel.serverHeight != frame.imageHeight) {
+                            screenPanel.setServerSize(frame.imageWidth, frame.imageHeight);
+                            screenPanel.updateBufferSize(frame.imageWidth, frame.imageHeight);
+                        }
+                    }
+
                     BufferedImage img = converter.convert(frame);
-                    
                     if (img != null) {
-                        // 3. Vẽ lên màn hình (Cần thêm hàm drawFullImage vào ScreenPanel)
                         SwingUtilities.invokeLater(() -> {
                             screenPanel.drawFullImage(img);
                             screenPanel.repaint();
@@ -65,7 +58,6 @@ public class VideoReceiver extends Thread {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null, "Kết nối Video bị ngắt!"));
         } finally {
             try { if (grabber != null) grabber.stop(); } catch (Exception e) {}
         }

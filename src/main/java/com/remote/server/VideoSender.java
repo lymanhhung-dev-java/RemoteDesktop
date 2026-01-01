@@ -29,10 +29,11 @@ public class VideoSender extends Thread {
         FFmpegFrameRecorder recorder = null;
         try {
             // Gửi kích thước màn hình để Client biết mà setup
-            dos.writeInt(Protocol.CMD_SCREEN_SIZE);
-            dos.writeInt(rect.width);
-            dos.writeInt(rect.height);
-            dos.flush();
+            // dos.writeInt(Protocol.CMD_SCREEN_SIZE);
+            // dos.writeInt(rect.width);
+            // dos.writeInt(rect.height);
+            // dos.flush();
+            recorder = new FFmpegFrameRecorder(socket.getOutputStream(), rect.width, rect.height);
 
             // Cấu hình FFmpeg Recorder: Ghi trực tiếp vào Output Stream của Socket
             // Format "h264", bitrate 2Mbps (tùy mạng), 30-60fps
