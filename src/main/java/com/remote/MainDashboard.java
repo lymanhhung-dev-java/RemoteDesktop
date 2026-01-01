@@ -9,6 +9,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.net.*;
+import java.util.Enumeration;
 
 public class MainDashboard {
     public static void main(String[] args) {
@@ -76,7 +77,8 @@ public class MainDashboard {
         new Thread(() -> {
             try (DatagramSocket socket = new DatagramSocket()) {
                 socket.setBroadcast(true);
-                socket.setSoTimeout(1000);
+                socket.setSoTimeout(1000); 
+                
                 byte[] data = Protocol.DISCOVERY_REQ.getBytes();
                 socket.send(new DatagramPacket(data, data.length, InetAddress.getByName("255.255.255.255"), Config.UDP_PORT));
 
@@ -86,21 +88,55 @@ public class MainDashboard {
                         byte[] buf = new byte[1024];
                         DatagramPacket pkt = new DatagramPacket(buf, buf.length);
                         socket.receive(pkt);
+                        
                         String msg = new String(pkt.getData(), 0, pkt.getLength()).trim();
                         if (msg.startsWith(Protocol.DISCOVERY_RES)) {
                             String ip = pkt.getAddress().getHostAddress();
-                            if (!ip.equals(getLocalIp())) { // Loại bỏ chính mình
+                        
+                            if (!isLocalAddress(ip)) { 
                                 String name = msg.split(";")[1];
-                                SwingUtilities.invokeLater(() -> model.addRow(new Object[]{name, ip}));
+                                
+                                boolean exists = false;
+                                for (int i = 0; i < model.getRowCount(); i++) {
+                                    if (model.getValueAt(i, 1).equals(ip)) {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (!exists) {
+                                    SwingUtilities.invokeLater(() -> model.addRow(new Object[]{name, ip}));
+                                }
                             }
                         }
                     } catch (SocketTimeoutException ex) { break; }
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) { e.printStackTrace(); }
         }).start();
     }
 
     private static String getLocalIp() {
         try { return InetAddress.getLocalHost().getHostAddress(); } catch (Exception e) { return "Unknown"; }
     }
+
+    // Hàm kiểm tra xem một IP có phải là của chính máy mình không
+private static boolean isLocalAddress(String ipToCheck) {
+    try {
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+            NetworkInterface iface = interfaces.nextElement();
+            Enumeration<InetAddress> addresses = iface.getInetAddresses();
+            while (addresses.hasMoreElements()) {
+                InetAddress addr = addresses.nextElement();
+                // Nếu IP nhận được trùng với BẤT KỲ IP nào của máy mình -> Là chính mình
+                if (addr.getHostAddress().equals(ipToCheck)) {
+                    return true;
+                }
+            }
+        }
+    } catch (SocketException e) {
+        e.printStackTrace();
+    }
+    return false;
+}
 }
