@@ -40,13 +40,16 @@ public class VideoSender extends Thread {
             recorder = new FFmpegFrameRecorder(socket.getOutputStream(), rect.width, rect.height);
             recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
             recorder.setFormat("h264");
-            recorder.setFrameRate(30); 
-            recorder.setVideoBitrate(2000 * 1000); // 2 Mbps (Tăng lên nếu muốn nét hơn)
-            
-            // Cấu hình giảm độ trễ tối đa (Zero Latency)
+
+            // --- THÊM CÁC DÒNG NÀY ĐỂ CHUẨN HÓA STREAM ---
+            recorder.setPixelFormat(org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_YUV420P); // Định dạng màu chuẩn H.264
+            recorder.setVideoOption("profile", "baseline"); // Profile nhẹ nhất, tương thích mọi máy
+
+            // Cấu hình tốc độ và độ trễ
+            recorder.setFrameRate(30);
+            recorder.setVideoBitrate(2000 * 1000); // 2 Mbps
             recorder.setVideoOption("preset", "ultrafast");
             recorder.setVideoOption("tune", "zerolatency");
-            recorder.setVideoOption("crf", "25"); // Chất lượng ảnh (thấp hơn là nét hơn, 20-28 là ổn)
 
             recorder.start();
 
@@ -62,22 +65,27 @@ public class VideoSender extends Thread {
                 if (pixels != null) {
                     // 2. Đổ dữ liệu pixel vào BufferedImage
                     buffer.setRGB(0, 0, rect.width, rect.height, pixels, 0, rect.width);
-                    
+
                     // 3. Convert sang Frame của JavaCV
                     Frame frame = converter.convert(buffer);
-                    
+
                     // 4. Encode và Gửi đi (FFmpeg tự xử lý việc chia packet gửi qua mạng)
                     recorder.record(frame);
                 }
 
                 // Giới hạn FPS (để không ngốn 100% CPU)
                 long duration = System.currentTimeMillis() - start;
-                if (duration < 33) Thread.sleep(33 - duration); // ~30 FPS
+                if (duration < 33)
+                    Thread.sleep(33 - duration); // ~30 FPS
             }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            try { if (recorder != null) recorder.stop(); } catch (Exception e) {}
+            try {
+                if (recorder != null)
+                    recorder.stop();
+            } catch (Exception e) {
+            }
         }
     }
 }

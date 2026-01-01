@@ -10,7 +10,9 @@ import java.io.DataOutputStream;
 import java.net.Socket;
 
 public class ViewerFrame extends JFrame {
-    public ViewerFrame(Socket socket, String ip) {
+    
+    // Sửa Constructor: Thêm tham số dis, dos
+    public ViewerFrame(Socket socket, DataInputStream dis, DataOutputStream dos, String ip) {
         setTitle("Remote Desktop - Connected to: " + ip);
         setSize(1024, 768);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -20,16 +22,15 @@ public class ViewerFrame extends JFrame {
         add(screenPanel, BorderLayout.CENTER);
 
         try {
-            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-            DataInputStream dis = new DataInputStream(socket.getInputStream());
-
-            // 2. Kích hoạt module Nhận ảnh (ScreenReceiver)
+            // KHÔNG TẠO MỚI dis/dos Ở ĐÂY NỮA (để tránh mất dữ liệu)
+            
+            // 2. Kích hoạt module Nhận Video (Truyền dis cũ vào)
             new VideoReceiver(socket, dis, screenPanel).start();
 
-            // 3. Kích hoạt module Gửi Input (InputSender)
+            // 3. Kích hoạt module Gửi Input (Truyền dos cũ vào)
             InputSender inputSender = new InputSender(dos, screenPanel);
             
-            // Đăng ký listener vào Panel và Frame
+            // Đăng ký sự kiện chuột phím
             screenPanel.addMouseListener(inputSender);
             screenPanel.addMouseMotionListener(inputSender);
             screenPanel.addMouseWheelListener(inputSender);
@@ -40,5 +41,13 @@ public class ViewerFrame extends JFrame {
         }
 
         setVisible(true);
+        
+        // Khi đóng cửa sổ thì đóng luôn socket
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                try { socket.close(); } catch (Exception ex) {}
+            }
+        });
     }
 }

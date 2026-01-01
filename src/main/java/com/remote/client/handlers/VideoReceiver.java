@@ -17,7 +17,7 @@ public class VideoReceiver extends Thread {
 
     public VideoReceiver(Socket socket, DataInputStream dis, ScreenPanel screenPanel) {
         this.socket = socket;
-        this.dis = dis;
+        this.dis = dis; 
         this.screenPanel = screenPanel;
     }
 
@@ -25,31 +25,27 @@ public class VideoReceiver extends Thread {
     public void run() {
         FFmpegFrameGrabber grabber = null;
         try {
-            grabber = new FFmpegFrameGrabber(socket.getInputStream());
+            // Để đọc tiếp luồng dữ liệu mà không bị ngắt quãng
+            grabber = new FFmpegFrameGrabber(dis);
+            
             grabber.setFormat("h264");
-            grabber.setOption("probesize", "5000000"); // Tăng lên 5MB để chắc chắn dò được header
-            grabber.setOption("analyzeduration", "5000000"); // Thời gian dò luồng
+            grabber.setOption("probesize", "10000000"); // 10MB (Tăng lên để dò kỹ hơn)
+            grabber.setOption("analyzeduration", "10000000"); 
             grabber.setVideoOption("preset", "ultrafast");
             
-            grabber.start(); // Bắt đầu nhận luồng ngay lập tức
+            grabber.start();
 
             Java2DFrameConverter converter = new Java2DFrameConverter();
 
-           while (!socket.isClosed()) {
+            while (!socket.isClosed()) {
                 Frame frame = grabber.grabImage();
                 if (frame != null) {
-                    // --- ĐOẠN CODE SỬA ĐỔI ---
-                    
-                    // 1. Chỉ xử lý nếu frame có kích thước hợp lệ
                     if (frame.imageWidth > 0 && frame.imageHeight > 0) {
-                        
-                        // Cập nhật kích thước Panel nếu thay đổi
                         if (screenPanel.serverWidth != frame.imageWidth || screenPanel.serverHeight != frame.imageHeight) {
                             screenPanel.setServerSize(frame.imageWidth, frame.imageHeight);
                             screenPanel.updateBufferSize(frame.imageWidth, frame.imageHeight);
                         }
 
-                        // 2. Convert và Vẽ
                         BufferedImage img = converter.convert(frame);
                         if (img != null) {
                             SwingUtilities.invokeLater(() -> {
@@ -57,14 +53,15 @@ public class VideoReceiver extends Thread {
                                 screenPanel.repaint();
                             });
                         }
-                    } 
-                    // Nếu size = 0 thì bỏ qua, không làm gì cả (tránh lỗi Picture size 0x0 invalid)
+                    }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
+            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null, "Kết nối video bị ngắt!"));
         } finally {
             try { if (grabber != null) grabber.stop(); } catch (Exception e) {}
+            try { socket.close(); } catch (Exception e) {}
         }
     }
 }
