@@ -37,7 +37,7 @@ public class InputSender implements MouseListener, MouseMotionListener, MouseWhe
     private void sendMouse(int type, MouseEvent e) {
         if (screenPanel.serverWidth == 0) return;
         // Tính toán tỉ lệ tọa độ
-        float scaleX = screenPanel.serverWidth / screenPanel.getWidth();
+        float scaleX = (float) screenPanel.serverWidth / screenPanel.getWidth();
         float scaleY = screenPanel.serverHeight / screenPanel.getHeight();
         int realX = (int) (e.getX() * scaleX);
         int realY = (int) (e.getY() * scaleY);
