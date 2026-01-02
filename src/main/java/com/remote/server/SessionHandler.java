@@ -25,19 +25,17 @@ public class SessionHandler extends Thread {
             DataInputStream dis = new DataInputStream(socket.getInputStream());
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 
-            // 1. Xác thực mật khẩu
             int cmd = dis.readInt();
             if (cmd == Protocol.CMD_AUTH_REQUEST) {
                 String clientPass = dis.readUTF();
                 if (serverPassword.equals(clientPass)) {
                     dos.writeInt(Protocol.CMD_AUTH_OK);
                     dos.flush();
-                    System.out.println("Client authenticated: " + socket.getInetAddress());
+                    System.out.println("Client authenticated!");
 
-                    // 2. Chạy luồng Gửi Màn Hình (ScreenSender)
-                    new VideoSender(socket, dos, rect).start();
+                    // SỬ DỤNG LẠI SCREEN SENDER CŨ
+                    new ScreenSender(socket, dos, rect).start();
 
-                    // 3. Chạy luồng Nhận Chuột/Phím (InputReceiver)
                     new InputReceiver(socket, dis, robot).start();
                 } else {
                     dos.writeInt(Protocol.CMD_AUTH_FAIL);
