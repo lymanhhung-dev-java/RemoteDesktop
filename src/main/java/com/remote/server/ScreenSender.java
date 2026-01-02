@@ -36,7 +36,7 @@ public class ScreenSender extends Thread {
                 long start = System.currentTimeMillis();
 
                 // GỌI HÀM C++ (Nhanh hơn Robot nhiều)
-                int[] currentPixels = nativeCapturer.captureScreen(rect.x, rect.y, rect.width, rect.height);
+                int[] currentPixels = nativeCapturer.captureScreenSafe(rect.x, rect.y, rect.width, rect.height);
                 
                 if (currentPixels == null) continue;
 
