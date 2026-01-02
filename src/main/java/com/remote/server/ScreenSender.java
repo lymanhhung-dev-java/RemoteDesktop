@@ -13,13 +13,13 @@ public class ScreenSender extends Thread {
     private Socket socket;
     private DataOutputStream dos;
     private Rectangle rect;
-    private NativeWrapper nativeCapturer;
+    private NativeWrapper nativeCapturer; // Dùng lại Native Wrapper (C++)
 
     public ScreenSender(Socket socket, DataOutputStream dos, Rectangle rect) {
         this.socket = socket;
         this.dos = dos;
         this.rect = rect;
-        this.nativeCapturer = new NativeWrapper();
+        this.nativeCapturer = new NativeWrapper(); // Khởi tạo C++
     }
 
     @Override
@@ -35,8 +35,9 @@ public class ScreenSender extends Thread {
             while (!socket.isClosed()) {
                 long start = System.currentTimeMillis();
 
-                // Gọi hàm C++ (NativeWrapper)
+                // GỌI HÀM C++ (Nhanh hơn Robot nhiều)
                 int[] currentPixels = nativeCapturer.captureScreen(rect.x, rect.y, rect.width, rect.height);
+                
                 if (currentPixels == null) continue;
 
                 if (prevPixelsRef[0] == null) {
@@ -45,6 +46,7 @@ public class ScreenSender extends Thread {
                 }
                 int[] prevPixels = prevPixelsRef[0];
 
+                // Logic chia Tile gửi đi (Giữ nguyên)
                 int cols = (int) Math.ceil((double) rect.width / Config.TILE_SIZE);
                 int rows = (int) Math.ceil((double) rect.height / Config.TILE_SIZE);
 
@@ -79,13 +81,14 @@ public class ScreenSender extends Thread {
                 dos.flush();
 
                 long duration = System.currentTimeMillis() - start;
-                if (duration < 16) Thread.sleep(16 - duration);
+                if (duration < 16) Thread.sleep(16 - duration); // 60 FPS
             }
         } catch (Exception e) {
             System.out.println("ScreenSender stopped.");
         }
     }
 
+    // Các hàm phụ trợ giữ nguyên
     private boolean isTileChangedRaw(int[] curr, int[] prev, int tx, int ty, int w, int h, int scanline) {
         int step = 2; 
         for (int y = 0; y < h; y += step) {
