@@ -10,6 +10,7 @@ import java.io.IOException;
 public class InputSender implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
     private DataOutputStream dos;
     private ScreenPanel screenPanel;
+    private long lastSendTime = 0;
 
     public InputSender(DataOutputStream dos, ScreenPanel screenPanel) {
         this.dos = dos;
@@ -35,6 +36,12 @@ public class InputSender implements MouseListener, MouseMotionListener, MouseWhe
     }
 
     private void sendMouse(int type, MouseEvent e) {
+    long now = System.currentTimeMillis();
+    if (type == Protocol.CMD_MOUSE_MOVE && (now - lastSendTime < 40)) {
+        return; 
+    }
+    lastSendTime = now;
+    
         if (screenPanel.serverWidth == 0) return;
         // Tính toán tỉ lệ tọa độ
         float scaleX = (float) screenPanel.serverWidth / screenPanel.getWidth();

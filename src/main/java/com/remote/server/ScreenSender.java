@@ -37,8 +37,9 @@ public class ScreenSender extends Thread {
 
                 // GỌI HÀM C++ (Nhanh hơn Robot nhiều)
                 int[] currentPixels = nativeCapturer.captureScreenSafe(rect.x, rect.y, rect.width, rect.height);
-                
-                if (currentPixels == null) continue;
+
+                if (currentPixels == null)
+                    continue;
 
                 if (prevPixelsRef[0] == null) {
                     prevPixelsRef[0] = new int[currentPixels.length];
@@ -74,14 +75,16 @@ public class ScreenSender extends Thread {
                         }
                     }
                 }
-                
+
                 synchronized (dos) {
                     dos.writeInt(Protocol.CMD_FRAME_END);
                 }
                 dos.flush();
 
                 long duration = System.currentTimeMillis() - start;
-                if (duration < 16) Thread.sleep(16 - duration); // 60 FPS
+                long sleepTime = 16 - duration;
+                if (sleepTime > 0)
+                    Thread.sleep(sleepTime);
             }
         } catch (Exception e) {
             System.out.println("ScreenSender stopped.");
@@ -90,11 +93,12 @@ public class ScreenSender extends Thread {
 
     // Các hàm phụ trợ giữ nguyên
     private boolean isTileChangedRaw(int[] curr, int[] prev, int tx, int ty, int w, int h, int scanline) {
-        int step = 2; 
+        int step = 2;
         for (int y = 0; y < h; y += step) {
             for (int x = 0; x < w; x += step) {
                 int idx = (ty + y) * scanline + (tx + x);
-                if (curr[idx] != prev[idx]) return true;
+                if (curr[idx] != prev[idx])
+                    return true;
             }
         }
         return false;

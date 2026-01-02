@@ -4,6 +4,7 @@ import javax.swing.JPanel;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 
 public class ScreenPanel extends JPanel {
     private BufferedImage backBuffer;
@@ -25,8 +26,15 @@ public class ScreenPanel extends JPanel {
     }
 
     public void drawTileToBackBuffer(int[] pixels, int x, int y, int w, int h) {
-        if (backBuffer == null) return;
-        backBuffer.setRGB(x, y, w, h, pixels, 0, w);
+    int[] bufferData = ((DataBufferInt) backBuffer.getRaster().getDataBuffer()).getData();
+    int scanline = backBuffer.getWidth();
+    for (int row = 0; row < h; row++) {
+        int srcPos = row * w;
+        int destPos = (y + row) * scanline + x;
+        if (destPos + w <= bufferData.length) {
+             System.arraycopy(pixels, srcPos, bufferData, destPos, w);
+        }
+    }
     }
 
     public void swapBuffers() {

@@ -35,6 +35,8 @@ public class ImageUtils {
                 int count = deflater.deflate(buffer);
                 baos.write(buffer, 0, count);
             }
+            deflater.end();
+            baos.close();
             return baos.toByteArray();
         } catch (Exception e) {
             e.printStackTrace();
