@@ -5,6 +5,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.awt.RenderingHints;
+
 
 public class ScreenPanel extends JPanel {
     private BufferedImage backBuffer;
@@ -49,6 +51,10 @@ public class ScreenPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         if (frontBuffer != null) {
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g.drawImage(frontBuffer, 0, 0, this.getWidth(), this.getHeight(), null);
         }
     }
