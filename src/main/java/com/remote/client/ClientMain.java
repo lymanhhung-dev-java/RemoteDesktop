@@ -1,6 +1,7 @@
 package com.remote.client;
 
 import com.remote.client.components.ViewerFrame;
+import com.remote.client.handlers.ClipboardWatcher;
 import com.remote.common.Config;
 import com.remote.common.Protocol;
 
@@ -17,6 +18,7 @@ public class ClientMain {
                 Socket socket = new Socket(ip, Config.TCP_PORT);
                 DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
                 DataInputStream dis = new DataInputStream(socket.getInputStream());
+                new Thread(new ClipboardWatcher(socket)).start();
 
                 // 2. Gửi mật khẩu xác thực
                 dos.writeInt(Protocol.CMD_AUTH_REQUEST);

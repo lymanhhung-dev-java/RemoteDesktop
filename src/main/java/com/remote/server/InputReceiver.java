@@ -5,6 +5,7 @@ import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.io.DataInputStream;
 import java.net.Socket;
+import com.remote.common.ClipboardUtils;
 
 public class InputReceiver extends Thread {
     private Socket socket;
@@ -22,7 +23,7 @@ public class InputReceiver extends Thread {
         try {
             while (!socket.isClosed()) {
                 int type = dis.readInt();
-                
+
                 switch (type) {
                     case Protocol.CMD_MOUSE_MOVE:
                         int x = dis.readInt();
@@ -44,7 +45,12 @@ public class InputReceiver extends Thread {
                     case Protocol.CMD_MOUSE_WHEEL:
                         robot.mouseWheel(dis.readInt());
                         break;
+                    case Protocol.CMD_CLIPBOARD_TEXT:
+                        String text = dis.readUTF();
+                        ClipboardUtils.setClipboardText(text);
+                        break;
                 }
+
             }
         } catch (Exception e) {
             System.out.println("InputReceiver ended.");
