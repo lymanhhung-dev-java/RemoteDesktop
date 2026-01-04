@@ -18,5 +18,7 @@ public class Protocol {
     public static final int CMD_AUTH_OK = 21;
     public static final int CMD_AUTH_FAIL = 22;
     public static final int CMD_CLIPBOARD_TEXT = 23;
-
+    public static final byte CMD_FILE_START = 50; 
+    public static final byte CMD_FILE_DATA  = 51; 
+    public static final byte CMD_FILE_END   = 52; 
 }
