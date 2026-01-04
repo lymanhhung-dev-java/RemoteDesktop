@@ -37,6 +37,9 @@ public class SessionHandler extends Thread {
                     new ScreenSender(socket, dos, rect).start();
 
                     new InputReceiver(socket, dis, robot).start();
+                    
+                    // Khởi động ChatReceiver để nhận tin nhắn
+                    new ChatReceiver(socket, dis).start();
                 } else {
                     dos.writeInt(Protocol.CMD_AUTH_FAIL);
                     dos.flush();

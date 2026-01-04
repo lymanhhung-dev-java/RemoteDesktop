@@ -15,6 +15,7 @@ public class Protocol {
     public static final int CMD_SEND_TILE = 10;
     public static final int CMD_AUTH_REQUEST = 20; 
     public static final int CMD_AUTH_OK = 21;      
-    public static final int CMD_AUTH_FAIL = 22;   
+    public static final int CMD_AUTH_FAIL = 22;
+    public static final int CMD_CHAT_MSG = 30;
     public static final int CMD_FRAME_END = 11;
 }

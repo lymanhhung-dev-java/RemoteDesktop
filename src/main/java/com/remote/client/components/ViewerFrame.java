@@ -18,6 +18,13 @@ public class ViewerFrame extends JFrame {
 
         ScreenPanel screenPanel = new ScreenPanel();
         add(screenPanel, BorderLayout.CENTER);
+        
+        // Thêm panel chat
+        JPanel chatPanel = new JPanel(new BorderLayout());
+        JTextField chatInput = new JTextField();
+        chatInput.setPreferredSize(new Dimension(0, 30));
+        chatPanel.add(chatInput, BorderLayout.CENTER);
+        add(chatPanel, BorderLayout.SOUTH);
 
         try {
             // DÙNG LẠI SCREEN RECEIVER CŨ (Nhớ truyền dis vào)
@@ -29,6 +36,21 @@ public class ViewerFrame extends JFrame {
             screenPanel.addMouseMotionListener(inputSender);
             screenPanel.addMouseWheelListener(inputSender);
             this.addKeyListener(inputSender);
+            
+            // Xử lý chat
+            chatInput.addActionListener(e -> {
+                try {
+                    String message = chatInput.getText();
+                    if (!message.isEmpty()) {
+                        dos.writeInt(com.remote.common.Protocol.CMD_CHAT_MSG);
+                        dos.writeUTF(message);
+                        dos.flush();
+                        chatInput.setText("");
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
 
         } catch (Exception e) {
             e.printStackTrace();
