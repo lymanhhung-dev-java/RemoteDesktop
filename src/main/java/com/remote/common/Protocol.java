@@ -17,4 +17,7 @@ public class Protocol {
     public static final int CMD_AUTH_OK = 21;      
     public static final int CMD_AUTH_FAIL = 22;   
     public static final int CMD_FRAME_END = 11;
+    public static final byte CMD_FILE_START = 50; // Báo bắt đầu gửi file + tên + dung lượng
+    public static final byte CMD_FILE_DATA  = 51; // Gửi từng gói dữ liệu
+    public static final byte CMD_FILE_END   = 52; // Báo kết thúc file
 }
