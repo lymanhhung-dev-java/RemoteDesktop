@@ -24,8 +24,12 @@ public class ViewerFrame extends JFrame {
         setSize(1024, 768);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
+        
         ScreenPanel screenPanel = new ScreenPanel();
         add(screenPanel, BorderLayout.CENTER);
+        
+        ChatPanel chatPanel = new ChatPanel(dos);
+        add(chatPanel, BorderLayout.SOUTH);
 
         try {
             // Khởi động luồng nhận màn hình
