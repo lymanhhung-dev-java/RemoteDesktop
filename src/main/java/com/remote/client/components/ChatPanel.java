@@ -33,6 +33,10 @@ public class ChatPanel extends JPanel {
                         dos.flush();
                     }
                     txtInput.setText(""); // Xóa ô nhập sau khi gửi
+                    Window window = SwingUtilities.getWindowAncestor(this);
+                    if (window != null) {
+                        window.requestFocus();
+                    }
                 } catch (IOException ex) {
                     JOptionPane.showMessageDialog(this, "Lỗi gửi tin: " + ex.getMessage());
                 }

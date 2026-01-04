@@ -3,7 +3,8 @@ package com.remote.client.components;
 import com.remote.client.handlers.InputSender;
 import com.remote.client.handlers.ScreenReceiver;
 import com.remote.common.Protocol; // Import Protocol
-
+import java.awt.event.MouseAdapter; 
+import java.awt.event.MouseEvent;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.dnd.*;
@@ -11,6 +12,7 @@ import java.awt.datatransfer.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.List;
+
 
 public class ViewerFrame extends JFrame {
 
@@ -24,10 +26,11 @@ public class ViewerFrame extends JFrame {
         setSize(1024, 768);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        
+        setFocusable(true);
+
         ScreenPanel screenPanel = new ScreenPanel();
         add(screenPanel, BorderLayout.CENTER);
-        
+
         ChatPanel chatPanel = new ChatPanel(dos);
         add(chatPanel, BorderLayout.SOUTH);
 
@@ -43,11 +46,18 @@ public class ViewerFrame extends JFrame {
             screenPanel.addMouseWheelListener(inputSender);
             this.addKeyListener(inputSender);
 
+            screenPanel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    ViewerFrame.this.requestFocusInWindow();
+                }
+            });
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // Sự kiện khi đóng cửa sổ thì ngắt kết nối
+       
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
