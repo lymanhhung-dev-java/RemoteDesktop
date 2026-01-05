@@ -22,10 +22,17 @@ public class Protocol {
     public static final int CMD_AUTH_FAIL = 22;
 
     public static final int CMD_CLIPBOARD_TEXT = 23;
-    
+
     public static final byte CMD_FILE_START = 50; 
     public static final byte CMD_FILE_DATA  = 51; 
     public static final byte CMD_FILE_END   = 52; 
 
     public static final int CMD_CHAT_MSG = 30;
+
+    // --- CÁC LỆNH CHO CHẾ ĐỘ ONLINE (RELAY) ---
+    public static final int CMD_REGISTER_HOST = 100;    // Máy Server báo danh: "Tôi là 123"
+    public static final int CMD_CONNECT_TO_ID = 101;    // Client yêu cầu: "Cho tôi nối máy 123"
+    public static final int CMD_ID_NOT_FOUND = 102;     // Relay báo: "Không tìm thấy ID đó"
+    public static final int CMD_CONNECT_SUCCESS = 103;  // Relay báo: "Kết nối thành công"
+
 }

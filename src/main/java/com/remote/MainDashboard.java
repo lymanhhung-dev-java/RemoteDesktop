@@ -21,7 +21,10 @@ public class MainDashboard {
     }
 
     private static void createUI() {
-        try { UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel"); } catch (Exception e) {}
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        } catch (Exception e) {
+        }
 
         JFrame frame = new JFrame("Remote Desktop Pro (Modular)");
         frame.setSize(800, 500);
@@ -33,26 +36,48 @@ public class MainDashboard {
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setBorder(BorderFactory.createTitledBorder("Máy của bạn"));
-        
-        JTextField txtIp = new JTextField(getLocalIp()); txtIp.setEditable(false);
-        JTextField txtPass = new JTextField(ServerMain.myPassword); txtPass.setEditable(false);
-        txtPass.setFont(new Font("Arial", Font.BOLD, 20)); txtPass.setForeground(Color.RED);
-        
-        infoPanel.add(new JLabel("IP:")); infoPanel.add(txtIp);
-        infoPanel.add(new JLabel("Password:")); infoPanel.add(txtPass);
+
+        JTextField txtId = new JTextField(ServerMain.myID);
+        txtId.setEditable(false);
+        txtId.setFont(new Font("Arial", Font.BOLD, 20));
+        txtId.setForeground(Color.BLUE);
+
+        // 2. Hiển thị Password
+        JTextField txtPass = new JTextField(ServerMain.myPassword);
+        txtPass.setEditable(false);
+        txtPass.setFont(new Font("Arial", Font.BOLD, 20));
+        txtPass.setForeground(Color.RED);
+
+        // 3. Hiển thị IP LAN (phụ)
+        JTextField txtIp = new JTextField(getLocalIp());
+        txtIp.setEditable(false);
+
+        // Thêm vào giao diện
+        infoPanel.add(new JLabel("ID Online (Gửi cho máy kia):"));
+        infoPanel.add(txtId); // <--- Thêm ô ID vào
+        infoPanel.add(Box.createVerticalStrut(10)); // Khoảng cách
+        infoPanel.add(new JLabel("Password:"));
+        infoPanel.add(txtPass);
+        infoPanel.add(Box.createVerticalStrut(10));
+        infoPanel.add(new JLabel("IP LAN (Dự phòng):"));
+        infoPanel.add(txtIp);
 
         // --- Panel Phải: Danh sách máy online ---
         JPanel remotePanel = new JPanel(new BorderLayout());
         remotePanel.setBorder(BorderFactory.createTitledBorder("Kết nối máy khác"));
-        
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Hostname", "IP"}, 0);
+
+        DefaultTableModel model = new DefaultTableModel(new String[] { "Hostname", "IP" }, 0);
         JTable table = new JTable(model);
-        
+
         JPanel btnPanel = new JPanel();
         JButton btnScan = new JButton("Scan LAN");
-        JButton btnConnect = new JButton("Connect");
-        btnPanel.add(btnScan); btnPanel.add(btnConnect);
-        
+        JButton btnConnect = new JButton("Connect IP");
+        JButton btnOnline = new JButton("Connect ID (Online)");
+
+        btnPanel.add(btnScan);
+        btnPanel.add(btnConnect);
+        btnPanel.add(btnOnline);
+
         remotePanel.add(new JScrollPane(table), BorderLayout.CENTER);
         remotePanel.add(btnPanel, BorderLayout.SOUTH);
 
@@ -63,9 +88,20 @@ public class MainDashboard {
             if (row >= 0) {
                 String ip = (String) model.getValueAt(row, 1);
                 String pass = JOptionPane.showInputDialog("Nhập mật khẩu máy " + ip + ":");
-                if (pass != null) ClientMain.start(ip, pass);
+                if (pass != null)
+                    ClientMain.start(ip, pass);
             }
         });
+
+        btnOnline.addActionListener(e -> {
+    String id = JOptionPane.showInputDialog("Nhập ID máy cần điều khiển:");
+    if (id != null && !id.isEmpty()) {
+        String pass = JOptionPane.showInputDialog("Nhập mật khẩu:");
+        if (pass != null) {
+            ClientMain.startOnline(id, pass);
+        }
+    }
+});
 
         frame.add(infoPanel);
         frame.add(remotePanel);
@@ -89,7 +125,7 @@ public class MainDashboard {
                     // Lấy địa chỉ Broadcast của từng card và gửi gói tin
                     for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
                         InetAddress broadcast = interfaceAddress.getBroadcast();
-                        
+
                         // Nếu card mạng này có địa chỉ broadcast (tức là nó nối mạng LAN)
                         if (broadcast != null) {
                             try {
@@ -98,7 +134,8 @@ public class MainDashboard {
                                 socket.setSoTimeout(1000); // Chờ 1 giây
 
                                 byte[] data = Protocol.DISCOVERY_REQ.getBytes();
-                                DatagramPacket sendPacket = new DatagramPacket(data, data.length, broadcast, Config.UDP_PORT);
+                                DatagramPacket sendPacket = new DatagramPacket(data, data.length, broadcast,
+                                        Config.UDP_PORT);
                                 socket.send(sendPacket);
                                 System.out.println("Đã gửi tín hiệu qua card: " + networkInterface.getDisplayName());
 
@@ -116,11 +153,11 @@ public class MainDashboard {
 
                                         if (msg.startsWith(Protocol.DISCOVERY_RES)) {
                                             String ip = recvPacket.getAddress().getHostAddress();
-                                            
+
                                             // Lọc bỏ IP của chính mình (quan trọng)
                                             if (!isLocalAddress(ip)) {
                                                 String name = msg.split(";")[1];
-                                                
+
                                                 // Check trùng lặp trước khi thêm vào bảng
                                                 SwingUtilities.invokeLater(() -> {
                                                     boolean exists = false;
@@ -131,7 +168,7 @@ public class MainDashboard {
                                                         }
                                                     }
                                                     if (!exists) {
-                                                        model.addRow(new Object[]{name, ip});
+                                                        model.addRow(new Object[] { name, ip });
                                                     }
                                                 });
                                             }
@@ -154,27 +191,31 @@ public class MainDashboard {
     }
 
     private static String getLocalIp() {
-        try { return InetAddress.getLocalHost().getHostAddress(); } catch (Exception e) { return "Unknown"; }
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (Exception e) {
+            return "Unknown";
+        }
     }
 
     // Hàm kiểm tra xem một IP có phải là của chính máy mình không
-private static boolean isLocalAddress(String ipToCheck) {
-    try {
-        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-        while (interfaces.hasMoreElements()) {
-            NetworkInterface iface = interfaces.nextElement();
-            Enumeration<InetAddress> addresses = iface.getInetAddresses();
-            while (addresses.hasMoreElements()) {
-                InetAddress addr = addresses.nextElement();
-                // Nếu IP nhận được trùng với BẤT KỲ IP nào của máy mình -> Là chính mình
-                if (addr.getHostAddress().equals(ipToCheck)) {
-                    return true;
+    private static boolean isLocalAddress(String ipToCheck) {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface iface = interfaces.nextElement();
+                Enumeration<InetAddress> addresses = iface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress addr = addresses.nextElement();
+                    // Nếu IP nhận được trùng với BẤT KỲ IP nào của máy mình -> Là chính mình
+                    if (addr.getHostAddress().equals(ipToCheck)) {
+                        return true;
+                    }
                 }
             }
+        } catch (SocketException e) {
+            e.printStackTrace();
         }
-    } catch (SocketException e) {
-        e.printStackTrace();
+        return false;
     }
-    return false;
-}
 }
