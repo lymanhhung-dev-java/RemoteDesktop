@@ -72,9 +72,11 @@ public class ServerMain {
                     new SessionHandler(socket, robot, rect, myPassword).run();
                     // Lưu ý dùng .run() để chạy trực tiếp trong luồng này, vì socket sẽ bị đóng nếu
                     // thoát ra
+                }else{
+                    socket.close();
                 }
 
-                socket.close();
+                
             } catch (Exception e) {
                 System.out.println("Relay connection failed. Retrying in 5s...");
                 try {
