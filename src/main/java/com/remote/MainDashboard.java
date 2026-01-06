@@ -81,15 +81,22 @@ public class MainDashboard {
         remotePanel.add(new JScrollPane(table), BorderLayout.CENTER);
         remotePanel.add(btnPanel, BorderLayout.SOUTH);
 
-        // Logic nút bấm
         btnScan.addActionListener(e -> scanLan(model));
         btnConnect.addActionListener(e -> {
+            String ip = null;
             int row = table.getSelectedRow();
             if (row >= 0) {
-                String ip = (String) model.getValueAt(row, 1);
-                String pass = JOptionPane.showInputDialog("Nhập mật khẩu máy " + ip + ":");
-                if (pass != null)
+                ip = (String) model.getValueAt(row, 1);
+            } 
+            else {
+                ip = JOptionPane.showInputDialog(frame, "Hãy nhập địa chỉ IP máy cần kết nối (VD: 192.168.1.5):");
+            }
+
+            if (ip != null && !ip.trim().isEmpty()) {
+                String pass = JOptionPane.showInputDialog(frame, "Nhập mật khẩu máy " + ip + ":");
+                if (pass != null) {
                     ClientMain.start(ip, pass);
+                }
             }
         });
 
