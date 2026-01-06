@@ -17,7 +17,6 @@ public class InputSender implements MouseListener, MouseMotionListener, MouseWhe
         this.screenPanel = screenPanel;
     }
 
-    // --- Helper gửi lệnh ---
     private void sendCmd(int type, int p1, int p2) {
         try {
             synchronized (dos) {
@@ -25,7 +24,8 @@ public class InputSender implements MouseListener, MouseMotionListener, MouseWhe
                 if (type == Protocol.CMD_MOUSE_MOVE) {
                     dos.writeInt(p1);
                     dos.writeInt(p2);
-                } else{
+                } 
+                else {
                     dos.writeInt(p1);
                 }
                 dos.flush();
@@ -37,41 +37,46 @@ public class InputSender implements MouseListener, MouseMotionListener, MouseWhe
 
     private int getButtonMask(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) return InputEvent.BUTTON1_DOWN_MASK;
-        if (e.getButton() == MouseEvent.BUTTON3) return InputEvent.BUTTON3_DOWN_MASK; // Chuột phải
-        if (e.getButton() == MouseEvent.BUTTON2) return InputEvent.BUTTON2_DOWN_MASK; // Chuột giữa
+        if (e.getButton() == MouseEvent.BUTTON3) return InputEvent.BUTTON3_DOWN_MASK;
+        if (e.getButton() == MouseEvent.BUTTON2) return InputEvent.BUTTON2_DOWN_MASK; 
         return InputEvent.BUTTON1_DOWN_MASK;
     }
 
-    private void sendMouse(int type, MouseEvent e) {
-    long now = System.currentTimeMillis();
-    if (type == Protocol.CMD_MOUSE_MOVE && (now - lastSendTime < 40)) {
-        return; 
-    }
-    lastSendTime = now;
-    
+    private void sendMouseLocation(int type, MouseEvent e) {
+        long now = System.currentTimeMillis();
+        if (type == Protocol.CMD_MOUSE_MOVE && (now - lastSendTime < 40)) {
+            return; 
+        }
+        lastSendTime = now;
+        
         if (screenPanel.serverWidth == 0) return;
-        // Tính toán tỉ lệ tọa độ
+        
         float scaleX = (float) screenPanel.serverWidth / screenPanel.getWidth();
         float scaleY = screenPanel.serverHeight / screenPanel.getHeight();
         int realX = (int) (e.getX() * scaleX);
         int realY = (int) (e.getY() * scaleY);
+        
         sendCmd(type, realX, realY);
     }
 
-    // --- Các Override của Listener ---
-    @Override public void mouseMoved(MouseEvent e) { sendMouse(Protocol.CMD_MOUSE_MOVE, e); }
-    @Override public void mouseDragged(MouseEvent e) { sendMouse(Protocol.CMD_MOUSE_MOVE, e); }
+
+    @Override public void mouseMoved(MouseEvent e) { sendMouseLocation(Protocol.CMD_MOUSE_MOVE, e); }
+    @Override public void mouseDragged(MouseEvent e) { sendMouseLocation(Protocol.CMD_MOUSE_MOVE, e); }
+
     @Override public void mousePressed(MouseEvent e) { 
         int mask = getButtonMask(e);
         sendCmd(Protocol.CMD_MOUSE_PRESS, mask, 0); 
     }
+    
     @Override public void mouseReleased(MouseEvent e) { 
         int mask = getButtonMask(e);
         sendCmd(Protocol.CMD_MOUSE_RELEASE, mask, 0); 
     }
+
     @Override public void mouseWheelMoved(MouseWheelEvent e) { sendCmd(Protocol.CMD_MOUSE_WHEEL, e.getWheelRotation(), 0); }
     @Override public void keyPressed(KeyEvent e) { sendCmd(Protocol.CMD_KEY_PRESS, e.getKeyCode(), 0); }
     @Override public void keyReleased(KeyEvent e) { sendCmd(Protocol.CMD_KEY_RELEASE, e.getKeyCode(), 0); }
+    
     @Override public void mouseClicked(MouseEvent e) {}
     @Override public void mouseEntered(MouseEvent e) {}
     @Override public void mouseExited(MouseEvent e) {}
