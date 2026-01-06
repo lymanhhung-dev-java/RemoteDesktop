@@ -96,6 +96,7 @@ public class InputReceiver extends Thread {
                             fileOut = null;
                             System.out.println("-> Đã lưu file thành công!");
                         }
+                        break;
                     case Protocol.CMD_CHAT_MSG:
                         String msg = dis.readUTF(); 
                         SwingUtilities.invokeLater(() -> {
