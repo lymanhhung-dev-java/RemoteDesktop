@@ -25,7 +25,7 @@ public class InputSender implements MouseListener, MouseMotionListener, MouseWhe
                 if (type == Protocol.CMD_MOUSE_MOVE) {
                     dos.writeInt(p1);
                     dos.writeInt(p2);
-                } else if (type != Protocol.CMD_MOUSE_PRESS && type != Protocol.CMD_MOUSE_RELEASE) {
+                } else{
                     dos.writeInt(p1);
                 }
                 dos.flush();
@@ -33,6 +33,13 @@ public class InputSender implements MouseListener, MouseMotionListener, MouseWhe
         } catch (IOException e) {
             System.out.println("Lỗi gửi input: " + e.getMessage());
         }
+    }
+
+    private int getButtonMask(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1) return InputEvent.BUTTON1_DOWN_MASK;
+        if (e.getButton() == MouseEvent.BUTTON3) return InputEvent.BUTTON3_DOWN_MASK; // Chuột phải
+        if (e.getButton() == MouseEvent.BUTTON2) return InputEvent.BUTTON2_DOWN_MASK; // Chuột giữa
+        return InputEvent.BUTTON1_DOWN_MASK;
     }
 
     private void sendMouse(int type, MouseEvent e) {
@@ -54,8 +61,14 @@ public class InputSender implements MouseListener, MouseMotionListener, MouseWhe
     // --- Các Override của Listener ---
     @Override public void mouseMoved(MouseEvent e) { sendMouse(Protocol.CMD_MOUSE_MOVE, e); }
     @Override public void mouseDragged(MouseEvent e) { sendMouse(Protocol.CMD_MOUSE_MOVE, e); }
-    @Override public void mousePressed(MouseEvent e) { sendMouse(Protocol.CMD_MOUSE_PRESS, e); }
-    @Override public void mouseReleased(MouseEvent e) { sendMouse(Protocol.CMD_MOUSE_RELEASE, e); }
+    @Override public void mousePressed(MouseEvent e) { 
+        int mask = getButtonMask(e);
+        sendCmd(Protocol.CMD_MOUSE_PRESS, mask, 0); 
+    }
+    @Override public void mouseReleased(MouseEvent e) { 
+        int mask = getButtonMask(e);
+        sendCmd(Protocol.CMD_MOUSE_RELEASE, mask, 0); 
+    }
     @Override public void mouseWheelMoved(MouseWheelEvent e) { sendCmd(Protocol.CMD_MOUSE_WHEEL, e.getWheelRotation(), 0); }
     @Override public void keyPressed(KeyEvent e) { sendCmd(Protocol.CMD_KEY_PRESS, e.getKeyCode(), 0); }
     @Override public void keyReleased(KeyEvent e) { sendCmd(Protocol.CMD_KEY_RELEASE, e.getKeyCode(), 0); }

@@ -46,11 +46,13 @@ public class InputReceiver extends Thread {
                         break;
 
                     case Protocol.CMD_MOUSE_PRESS:
-                        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                        int maskPress = dis.readInt(); 
+                        robot.mousePress(maskPress);   
                         break;
 
                     case Protocol.CMD_MOUSE_RELEASE:
-                        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                        int maskRelease = dis.readInt();
+                        robot.mouseRelease(maskRelease);
                         break;
 
                     case Protocol.CMD_KEY_PRESS:
