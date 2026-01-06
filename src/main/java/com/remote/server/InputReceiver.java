@@ -104,6 +104,7 @@ public class InputReceiver extends Thread {
                                     "Remote Chat",
                                     JOptionPane.INFORMATION_MESSAGE);
                         });
+                        break;
 
                     case Protocol.CMD_CLIPBOARD_TEXT: // Mã 23
                         try {
