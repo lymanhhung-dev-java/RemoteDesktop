@@ -32,14 +32,14 @@ public class NativeWrapper {
     // Khai báo hàm Native
     private native int[] captureScreen(int x, int y, int width, int height);
 
-    // Hàm gọi an toàn: Nếu C++ lỗi thì dùng Java Robot
+    // Nếu C++ lỗi thì dùng Java Robot
     public int[] captureScreenSafe(int x, int y, int width, int height) {
         if (isLoaded) {
             try {
                 return captureScreen(x, y, width, height);
             } catch (Throwable e) {
                 System.err.println("Lỗi khi gọi hàm C++: " + e.getMessage());
-                isLoaded = false; // Tắt C++, lần sau dùng Robot
+                isLoaded = false; // Tắt C++
             }
         }
         

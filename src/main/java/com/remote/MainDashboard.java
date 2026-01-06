@@ -54,8 +54,8 @@ public class MainDashboard {
 
         // Thêm vào giao diện
         infoPanel.add(new JLabel("ID Online (Gửi cho máy kia):"));
-        infoPanel.add(txtId); // <--- Thêm ô ID vào
-        infoPanel.add(Box.createVerticalStrut(10)); // Khoảng cách
+        infoPanel.add(txtId); 
+        infoPanel.add(Box.createVerticalStrut(10));
         infoPanel.add(new JLabel("Password:"));
         infoPanel.add(txtPass);
         infoPanel.add(Box.createVerticalStrut(10));
@@ -148,7 +148,7 @@ public class MainDashboard {
                                         socket.receive(recvPacket);
 
                                         String msg = new String(recvPacket.getData(), 0, recvPacket.getLength()).trim();
-                                        // DEBUG: In ra xem nhận được gì không
+                                        // In ra xem nhận được gì không
                                         System.out.println("Nhận từ: " + recvPacket.getAddress().getHostAddress());
 
                                         if (msg.startsWith(Protocol.DISCOVERY_RES)) {

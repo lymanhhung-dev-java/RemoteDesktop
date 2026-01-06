@@ -13,7 +13,7 @@ public class ScreenSender extends Thread {
     private Socket socket;
     private DataOutputStream dos;
     private Rectangle rect;
-    private NativeWrapper nativeCapturer; // Dùng lại Native Wrapper (C++)
+    private NativeWrapper nativeCapturer; // Native Wrapper (C++)
 
     public ScreenSender(Socket socket, DataOutputStream dos, Rectangle rect) {
         this.socket = socket;
@@ -35,7 +35,7 @@ public class ScreenSender extends Thread {
             while (!socket.isClosed()) {
                 long start = System.currentTimeMillis();
 
-                // GỌI HÀM C++ (Nhanh hơn Robot nhiều)
+                // GỌI HÀM C++ 
                 int[] currentPixels = nativeCapturer.captureScreenSafe(rect.x, rect.y, rect.width, rect.height);
 
                 if (currentPixels == null)
@@ -47,7 +47,7 @@ public class ScreenSender extends Thread {
                 }
                 int[] prevPixels = prevPixelsRef[0];
 
-                // Logic chia Tile gửi đi (Giữ nguyên)
+                // Logic chia Tile gửi đi 
                 int cols = (int) Math.ceil((double) rect.width / Config.TILE_SIZE);
                 int rows = (int) Math.ceil((double) rect.height / Config.TILE_SIZE);
 
@@ -91,7 +91,7 @@ public class ScreenSender extends Thread {
         }
     }
 
-    // Các hàm phụ trợ giữ nguyên
+    // Các hàm phụ 
     private boolean isTileChangedRaw(int[] curr, int[] prev, int tx, int ty, int w, int h, int scanline) {
         int step = 2;
         for (int y = 0; y < h; y += step) {

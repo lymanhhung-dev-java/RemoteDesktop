@@ -33,7 +33,6 @@ public class SessionHandler extends Thread {
                     dos.flush();
                     System.out.println("Client authenticated!");
 
-                    // SỬ DỤNG LẠI SCREEN SENDER CŨ
                     new ScreenSender(socket, dos, rect).start();
 
                     new InputReceiver(socket, dis, robot).start();

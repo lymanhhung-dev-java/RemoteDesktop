@@ -9,7 +9,7 @@ import java.net.Socket;
 
 public class NetworkManager {
     
-    // Kết nối và xác thực. Trả về Socket nếu thành công, ném Exception nếu thất bại.
+    // Kết nối và xác thực. Trả về Socket nếu thành công
     public static Socket connect(String ip, String password) throws Exception {
         Socket socket = new Socket(ip, Config.TCP_PORT);
         DataInputStream dis = new DataInputStream(socket.getInputStream());

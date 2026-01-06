@@ -9,7 +9,6 @@ import java.util.zip.Inflater;
 public class ImageUtils {
 
     // Nén mảng pixel (int[]) thành byte[] dùng Zlib (Zip)
-    // Nhanh hơn JPEG nhiều với giao diện desktop
     public static byte[] compressRaw(int[] pixels, int width, int height) {
         try {
             // 1. Chuyển int[] (4 byte) thành byte[] (raw bytes)
@@ -25,7 +24,7 @@ public class ImageUtils {
 
             // 2. Nén Zlib
             Deflater deflater = new Deflater();
-            deflater.setLevel(Deflater.BEST_SPEED); // Ưu tiên tốc độ
+            deflater.setLevel(Deflater.BEST_SPEED); 
             deflater.setInput(rawBytes);
             deflater.finish();
 
@@ -70,7 +69,4 @@ public class ImageUtils {
         }
     }
     
-    // Giữ lại hàm cũ nếu cần, nhưng bài này ta không dùng đến
-    public static byte[] compress(BufferedImage image, float quality) { return null; }
-    public static BufferedImage decompress(byte[] data) { return null; }
 }

@@ -6,7 +6,7 @@ import java.net.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RelayServer {
-    private static final int PORT = 7777; // Cổng cho Relay (khác cổng LAN 9999 cho đỡ nhầm)
+    private static final int PORT = 7777; // Cổng cho Relay 
     private static ConcurrentHashMap<String, Socket> waitingHosts = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {

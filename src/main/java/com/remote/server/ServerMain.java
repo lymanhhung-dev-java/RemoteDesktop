@@ -70,8 +70,6 @@ public class ServerMain {
                     // Chuyển giao Socket này cho SessionHandler xử lý tiếp (xác thực pass, gửi
                     // ảnh...)
                     new SessionHandler(socket, robot, rect, myPassword).run();
-                    // Lưu ý dùng .run() để chạy trực tiếp trong luồng này, vì socket sẽ bị đóng nếu
-                    // thoát ra
                 }else{
                     socket.close();
                 }
