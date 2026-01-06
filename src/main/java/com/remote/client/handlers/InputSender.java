@@ -21,7 +21,7 @@ public class InputSender implements MouseListener, MouseMotionListener, MouseWhe
     private void sendCmd(int type, int p1, int p2) {
         try {
             synchronized (dos) {
-                dos.writeInt(type);
+                dos.writeByte(type);
                 if (type == Protocol.CMD_MOUSE_MOVE) {
                     dos.writeInt(p1);
                     dos.writeInt(p2);

@@ -1,5 +1,6 @@
 package com.remote.client.components;
 
+import com.remote.client.handlers.ClipboardWatcher;
 import com.remote.client.handlers.InputSender;
 import com.remote.client.handlers.ScreenReceiver;
 import com.remote.common.Protocol; // Import Protocol
@@ -18,6 +19,7 @@ public class ViewerFrame extends JFrame {
 
     // Khai báo biến dos ở đây để toàn bộ class dùng được
     private DataOutputStream dos;
+    private ClipboardWatcher clipboardWatcher;
     
     public ViewerFrame(Socket socket, DataInputStream dis, DataOutputStream dos, String ip) {
         this.dos = dos; // Lưu biến dos vào class ngay đầu tiên
@@ -53,6 +55,9 @@ public class ViewerFrame extends JFrame {
                 }
             });
 
+            clipboardWatcher = new ClipboardWatcher(dos);
+            new Thread(clipboardWatcher).start();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -61,6 +66,9 @@ public class ViewerFrame extends JFrame {
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                if (clipboardWatcher != null) {
+                    clipboardWatcher.stopRunning();
+                }
                 try { socket.close(); } catch (Exception ex) {}
             }
         });
@@ -104,30 +112,28 @@ public class ViewerFrame extends JFrame {
 
     private void sendFile(File file) {
         try {
-            // 1. Gửi lệnh BẮT ĐẦU: ID lệnh + Tên file + Kích thước
-            dos.writeByte(Protocol.CMD_FILE_START);
-            dos.writeUTF(file.getName());
-            dos.writeLong(file.length());
-            dos.flush();
+            synchronized (dos) { 
+                // 1. Gửi lệnh BẮT ĐẦU
+                dos.writeByte(Protocol.CMD_FILE_START); // Nhớ dùng writeByte luôn cho chuẩn
+                dos.writeUTF(file.getName());
+                dos.writeLong(file.length());
+                dos.flush();
 
+                FileInputStream fis = new FileInputStream(file);
+                byte[] buffer = new byte[4096];
+                int bytesRead;
         
-            FileInputStream fis = new FileInputStream(file);
-            byte[] buffer = new byte[4096]; // Mỗi lần gửi 4KB
-            int bytesRead;
-    
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                dos.writeByte(Protocol.CMD_FILE_DATA); // Báo đây là gói dữ liệu
-                dos.writeInt(bytesRead);               // Báo độ dài gói này
-                dos.write(buffer, 0, bytesRead);       // Gửi dữ liệu thực
+                while ((bytesRead = fis.read(buffer)) != -1) {
+                    dos.writeByte(Protocol.CMD_FILE_DATA);
+                    dos.writeInt(bytesRead);
+                    dos.write(buffer, 0, bytesRead);
+                    dos.flush();
+                }
+                fis.close();
+            
+                dos.writeByte(Protocol.CMD_FILE_END);
                 dos.flush();
             }
-            fis.close();
-
-         
-            dos.writeByte(Protocol.CMD_FILE_END);
-            dos.flush();
-            
-            System.out.println("-> Đã gửi xong file: " + file.getName());
 
         } catch (IOException e) {
             System.err.println("Lỗi khi gửi file: " + e.getMessage());

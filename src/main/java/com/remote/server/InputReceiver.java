@@ -1,5 +1,6 @@
 package com.remote.server;
 
+import com.remote.common.ClipboardUtils;
 import com.remote.common.Protocol;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
@@ -8,7 +9,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import com.remote.common.ClipboardUtils;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -102,6 +102,16 @@ public class InputReceiver extends Thread {
                                     "Remote Chat",
                                     JOptionPane.INFORMATION_MESSAGE);
                         });
+
+                    case Protocol.CMD_CLIPBOARD_TEXT: // Mã 23
+                        try {
+                            String text = dis.readUTF();
+                            // Set nội dung này vào Clipboard của Server
+                            ClipboardUtils.setClipboardText(text);
+                            System.out.println("-> Đã đồng bộ Clipboard từ Client: " + text);
+                        } catch (Exception e) {
+                            System.err.println("Lỗi set clipboard: " + e.getMessage());
+                        }
                         break;
                 }
 

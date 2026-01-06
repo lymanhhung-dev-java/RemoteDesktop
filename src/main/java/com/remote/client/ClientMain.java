@@ -61,7 +61,6 @@ public class ClientMain {
                 Socket socket = new Socket(ip, Config.TCP_PORT);
                 DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
                 DataInputStream dis = new DataInputStream(socket.getInputStream());
-                new Thread(new ClipboardWatcher(socket)).start();
 
                 // 2. Gửi mật khẩu xác thực
                 dos.writeInt(Protocol.CMD_AUTH_REQUEST);

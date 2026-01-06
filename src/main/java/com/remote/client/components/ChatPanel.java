@@ -28,7 +28,7 @@ public class ChatPanel extends JPanel {
             if (!msg.isEmpty()) {
                 try {
                     synchronized (dos) {
-                        dos.writeInt(Protocol.CMD_CHAT_MSG); // Gửi mã lệnh
+                        dos.writeByte(Protocol.CMD_CHAT_MSG); // Gửi mã lệnh
                         dos.writeUTF(msg);                   // Gửi nội dung
                         dos.flush();
                     }
